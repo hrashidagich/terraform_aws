@@ -24,3 +24,16 @@ module "ec2_instance" {
   vpc_security_group_ids = [module.Networking.default_sg_id]
   subnet_id              = flatten(module.Networking.private_subnets_id)[0]
 }
+
+module "bastion" {
+  source = "umotif-public/bastion/aws"
+  version = "~> 2.1.0"
+
+  name_prefix = "ec2_public"
+
+  vpc_id         = module.Networking.vpc_id
+  public_subnets = [flatten(module.Networking.public_subnets_id)[0]]
+
+  ssh_key_name   = var.ec2_public_key
+
+}
