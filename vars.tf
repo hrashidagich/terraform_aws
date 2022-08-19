@@ -46,7 +46,17 @@ variable "ec2_private_ips" {
 #   default = [module.Networking.default_sg_id]
 # }
 
-variable "ec2_public_key" {
+variable "ec2_key" {
   description = "EC2 public instance key"
   default = "haris"
+}
+
+variable "ec2_ami" {
+  description = "EC2 ami"
+  default = "ami-065deacbcaac64cf2"
+}
+
+variable "ec2_type" {
+  description = "EC2 instance type"
+  default = "t2.micro"
 }

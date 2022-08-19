@@ -54,9 +54,18 @@ resource "aws_route_table" "private" {
   }
 }
 
+resource "aws_internet_gateway" "public-env-gw" {
+  vpc_id = aws_vpc.vpc.id
+}
+
 # Routing tables to route traffic for Public Subnet
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.vpc.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.public-env-gw.id
+  }
 
   tags = {
     Name        = "${var.environment}-public-route-table"
@@ -105,4 +114,35 @@ resource "aws_security_group" "default" {
     Environment = "${var.environment}"
   }
 }
+
+# Bastion Security Group of VPC
+resource "aws_security_group" "bastion" {
+  name        = "${var.environment}-bastion-sg"
+  description = "Bastion SG to allow internet traffic"
+  vpc_id      = aws_vpc.vpc.id
+  depends_on = [
+    aws_vpc.vpc
+  ]
+
+  ingress {
+    description = "SSH open"
+    from_port = "22"
+    to_port   = "22"
+    protocol  = "tcp"
+    cidr_blocks = [
+      "0.0.0.0/0"
+    ]
+  }
+
+  egress {
+    from_port = "0"
+    to_port   = "0"
+    protocol  = "-1"
+  }
+
+  tags = {
+    Environment = "${var.environment}"
+  }
+}
+
 

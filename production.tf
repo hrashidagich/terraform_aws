@@ -19,21 +19,34 @@ module "ec2_instance" {
 
   name = "ec2_private"
 
-  ami                    = "ami-065deacbcaac64cf2"
-  instance_type          = "t2.micro"
+  ami                    = var.ec2_ami
+  instance_type          = var.ec2_type
   vpc_security_group_ids = [module.Networking.default_sg_id]
   subnet_id              = flatten(module.Networking.private_subnets_id)[0]
 }
 
-module "bastion" {
-  source = "umotif-public/bastion/aws"
-  version = "~> 2.1.0"
+resource "aws_instance" "bastion" {
+  ami                         = var.ec2_ami
+  key_name                    = var.ec2_key
+  instance_type               = var.ec2_type
+  security_groups             = [module.Networking.bastion_sg_id]
+  associate_public_ip_address = true
+  subnet_id                   = flatten(module.Networking.public_subnets_id)[0]
 
-  name_prefix = "ec2_public"
+  provisioner "file" {
+    source      = "./ping.sh"
+    destination = "/ping.sh"
 
-  vpc_id         = module.Networking.vpc_id
-  public_subnets = [flatten(module.Networking.public_subnets_id)[0]]
+    connection {
+      type        = "ssh"
+      user        = "ubuntu"
+      private_key = "${file("./haris.pem")}"
+      host        = "${self.public_ip}"
+    }
+  }
+}
 
-  ssh_key_name   = var.ec2_public_key
-
+resource "aws_eip" "ip-test-env" {
+  instance = "${aws_instance.bastion.id}"
+  vpc      = true
 }
